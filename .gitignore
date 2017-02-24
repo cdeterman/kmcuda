@@ -37,3 +37,13 @@ cmake-build-*
 *.exe
 *.out
 *.app
+.Rproj.user
+
+# R package related
+.Rhistory
+.RData
+src/*.o
+src/*.a
+*.so
+*.dll
+src/Makevars
