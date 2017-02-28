@@ -46,4 +46,7 @@ src/*.o
 src/*.a
 *.so
 *.dll
+autom4te.cache/*
+config.log
+config.status
 src/Makevars
