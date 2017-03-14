@@ -23,7 +23,7 @@
 #' the average distance between cluster elements and the
 #' corresponding centroids.  Useful for finding the best 'K'.
 #' Returned as third list element
-#' @param seed random generator seed for reproducible results
+#' @param seed random generator seed for reproducible results [deprecated]
 #' @param device integer defining device to use. 1 = first device,
 #' 2 = second device, 3 = first & second devices, 0 = use all devices.
 #' Default = 0
@@ -53,8 +53,12 @@ kmeans_cuda <- function(
 		stop("tolerance must be a numeric value between [0, 1]")
 	}
 	if (yinyang_t < 0 || yinyang_t > 0.5) {
-		Rcpp::stop("tolerance must be in [0, 0.5]");
- 	}
+		stop("tolerance must be in [0, 0.5]");
+	}
+	
+	if(is.list(samples)){
+		samples <- do.call('rbind', samples)
+	}
 	
 	result <- r_kmeans_cuda(samples, clusters, tolerance, init,
 													yinyang_t, metric, average_distance, seed,
@@ -100,6 +104,10 @@ knn_cuda <- function(
 	
 	if(length(assignments) != nrow(samples)){
 		stop("invalid assignment's length")
+	}
+	
+	if(is.list(samples)){
+		samples <- do.call('rbind', samples)
 	}
 	
 	result <- r_knn_cuda(k, samples, centroids,

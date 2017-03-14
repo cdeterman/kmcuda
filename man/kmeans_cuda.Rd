@@ -34,7 +34,7 @@ the average distance between cluster elements and the
 corresponding centroids.  Useful for finding the best 'K'.
 Returned as third list element}
 
-\item{seed}{random generator seed for reproducible results}
+\item{seed}{random generator seed for reproducible results [deprecated]}
 
 \item{device}{integer defining device to use. 1 = first device,
 2 = second device, 3 = first & second devices, 0 = use all devices.
