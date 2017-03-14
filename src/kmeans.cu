@@ -275,8 +275,10 @@ __global__ void kmeans_assign_lloyd_smallc(
   }
   if (nearest == UINT32_MAX) {
     if (!insane) {
+	    #ifndef R_DEBUG
       printf("CUDA kernel kmeans_assign: nearest neighbor search failed for "
              "sample %" PRIu32 "\n", sample);
+      #endif
       return;
     } else {
       nearest = d_clusters_size;
@@ -348,8 +350,10 @@ __global__ void kmeans_assign_lloyd(
   }
   if (nearest == UINT32_MAX) {
     if (!insane) {
+    	#ifndef R_DEBUG
       printf("CUDA kernel kmeans_assign: nearest neighbor search failed for "
              "sample %" PRIu32 "\n", sample);
+      #endif
       return;
     } else {
       nearest = d_clusters_size;
@@ -707,7 +711,9 @@ static int check_changed(int iter, float tolerance, uint32_t h_samples_size,
   if (overall_changed <= tolerance * h_samples_size) {
     return -1;
   }
+  #ifndef R_DEBUG
   assert(overall_changed <= h_samples_size);
+  #endif
   uint32_t zero = 0;
   FOR_EACH_DEV(
     CUCH(cudaMemcpyToSymbolAsync(d_changed_number, &zero, sizeof(zero)),
@@ -1037,10 +1043,14 @@ KMCUDAResult kmeans_cuda_yy(
   if (h_yy_groups_size == 0 || YINYANG_DRAFT_REASSIGNMENTS <= tolerance) {
     if (verbosity > 0) {
       if (h_yy_groups_size == 0) {
+      	#ifndef R_DEBUG
         printf("too few clusters for this yinyang_t => Lloyd\n");
+        #endif
       } else {
+	      #ifndef R_DEBUG
         printf("tolerance is too high (>= %.2f) => Lloyd\n",
                YINYANG_DRAFT_REASSIGNMENTS);
+        #endif
       }
     }
     return kmeans_cuda_lloyd(

@@ -1,3 +1,8 @@
+
+#ifndef NDEBUG
+#define NDEBUG
+#endif
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -13,8 +18,11 @@
 #include <cuda_profiler_api.h>
 #endif
 
+#include <Rcpp.h>
+
 #include "private.h"
 
+inline int randWrapper(const int n) { return floor(unif_rand()*n); }
 
 static KMCUDAResult check_kmeans_args(
     float tolerance,
@@ -174,11 +182,19 @@ static KMCUDAResult print_memory_stats(const std::vector<int> &devs) {
     if (cudaMemGetInfo(&free_bytes, &total_bytes) != cudaSuccess) {
       return kmcudaRuntimeError;
     }
+    
+#ifndef R_DEBUG
     printf("GPU #%d memory: used %zu bytes (%.1f%%), free %zu bytes, "
            "total %zu bytes\n",
            dev, total_bytes - free_bytes,
            (total_bytes - free_bytes) * 100.0 / total_bytes,
            free_bytes, total_bytes);
+#else
+    Rcpp::Rcout << "GPU #" << dev << " memory: used " << total_bytes - free_bytes <<
+    	" bytes (" << (total_bytes - free_bytes) * 100.0 / total_bytes << "), free " <<
+    		free_bytes << " bytes, total " << total_bytes << " bytes" << std::endl;
+#endif
+    
   );
   return kmcudaSuccess;
 }
@@ -218,7 +234,9 @@ KMCUDAResult kmeans_init_centroids(
     }
   }
 
+#ifndef R_DEBUG
   srand(seed);
+#endif
   switch (method) {
     case kmcudaInitMethodImport:
       if (device_ptrs < 0) {
@@ -248,7 +266,11 @@ KMCUDAResult kmeans_init_centroids(
       for (uint32_t s = 0; s < samples_size; s++) {
         chosen[s] = s;
       }
+#ifndef R_DEBUG
       std::random_shuffle(chosen.begin(), chosen.end());
+#else
+      std::random_shuffle(chosen.begin(), chosen.end(), randWrapper);
+#endif
       DEBUG("shuffle complete, copying to device(s)...\n");
       for (uint32_t c = 0; c < clusters_size; c++) {
         RETERR(cuda_copy_sample_t(
@@ -262,7 +284,11 @@ KMCUDAResult kmeans_init_centroids(
       float smoke = NAN;
       uint32_t first_index;
       while (smoke != smoke) {
-        first_index = rand() % samples_size;
+#ifndef R_DEBUG
+      	first_index = rand() % samples_size;
+#else
+				first_index = (int)floor(Rcpp::runif(1)[0] * samples_size);	
+#endif
         cudaSetDevice(devs[0]);
         CUCH(cudaMemcpy(&smoke, samples[0].get() + first_index, sizeof(float),
                         cudaMemcpyDeviceToHost), kmcudaMemoryCopyError);
@@ -273,19 +299,35 @@ KMCUDAResult kmeans_init_centroids(
       INFO("performing kmeans++...\n");
       std::unique_ptr<float[]> host_dists(new float[samples_size]);
       if (verbosity > 2) {
+#ifndef R_DEBUG
         printf("kmeans++: dump %" PRIu32 " %" PRIu32 " %p\n",
                samples_size, features_size, host_dists.get());
-        FOR_EACH_DEVI(
-          printf("kmeans++: dev #%d: %p %p %p\n", devs[devi],
-                 samples[devi].get(), (*centroids)[devi].get(),
-                 (*dists)[devi].get());
-        );
+      	
+      	FOR_EACH_DEVI(
+      	  printf("kmeans++: dev #%d: %p %p %p\n", devs[devi],
+      	         samples[devi].get(), (*centroids)[devi].get(),
+      	         (*dists)[devi].get());
+      	);
+#else
+      	Rcpp::Rcout << "kmeans++: dump " << samples_size << " " <<
+      		features_size << " " << host_dists.get() << std::endl;
+      	
+      	FOR_EACH_DEVI(
+      		Rcpp::Rcout << "kmeans++: dev #" << devs[devi] << ": " << 
+      			samples[devi].get() << " " << (*centroids)[devi].get() << " " <<
+      				(*dists)[devi].get() << std::endl;
+      	);
+#endif 	
       }
       for (uint32_t i = 1; i < clusters_size; i++) {
         if (verbosity > 1 || (verbosity > 0 && (
               clusters_size < 100 || i % (clusters_size / 100) == 0))) {
+#ifndef R_DEBUG
           printf("\rstep %d", i);
           fflush(stdout);
+#else
+          Rcpp::Rcout << "step " << i << std::endl;
+#endif
         }
         atomic_float dist_sum = 0;
         RETERR(kmeans_cuda_plus_plus(
@@ -296,7 +338,12 @@ KMCUDAResult kmeans_init_centroids(
           assert(dist_sum == dist_sum);
           INFO("\ninternal bug inside kmeans_init_centroids: dist_sum is NaN\n");
         }
+        
+#ifndef R_DEBUG
         double choice = ((rand() + .0) / RAND_MAX);
+#else
+        double choice = Rcpp::runif(1)[0];  
+#endif
         uint32_t choice_approx = choice * samples_size;
         double choice_sum = choice * dist_sum;
         uint32_t j;
@@ -345,7 +392,12 @@ KMCUDAResult kmeans_init_centroids(
       float smoke = NAN;
       uint32_t first_index;
       while (smoke != smoke) {
-        first_index = rand() % samples_size;
+      	
+#ifndef R_DEBUG
+      	first_index = rand() % samples_size;
+#else
+      	first_index = (int)floor(Rcpp::runif(1)[0] * samples_size);
+#endif
         cudaSetDevice(devs[0]);
         CUCH(cudaMemcpy(&smoke, samples[0].get() + first_index, sizeof(float),
                         cudaMemcpyDeviceToHost), kmcudaMemoryCopyError);
@@ -366,8 +418,12 @@ KMCUDAResult kmeans_init_centroids(
       for (uint32_t k = 1; k < clusters_size; k++) {
         if (verbosity > 1 || (verbosity > 0 && (
               clusters_size < 100 || k % (clusters_size / 100) == 0))) {
+#ifndef R_DEBUG
           printf("\rstep %d", k);
           fflush(stdout);
+#else
+        	Rcpp::Rcout << "step " << k << std::endl;
+#endif
         }
         RETERR(kmeans_cuda_afkmc2_random_step(
             k, m, seed, verbosity, dists->back().get(),

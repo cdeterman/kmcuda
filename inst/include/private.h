@@ -12,9 +12,20 @@ typedef double atomic_float;
 typedef float atomic_float;
 #endif
 
+#ifndef R_DEBUG
 #define INFO(...) do { if (verbosity > 0) { printf(__VA_ARGS__); } } while (false)
 #define DEBUG(...) do { if (verbosity > 1) { printf(__VA_ARGS__); } } while (false)
 #define TRACE(...) do { if (verbosity > 2) { printf(__VA_ARGS__); } } while (false)
+
+#else
+
+#include "R.h"
+#include "Rinternals.h"
+
+#define INFO(...) do { if (verbosity > 0) { Rprintf(__VA_ARGS__); } } while (false)
+#define DEBUG(...) do { if (verbosity > 1) { Rprintf(__VA_ARGS__); } } while (false)
+#define TRACE(...) do { if (verbosity > 2) { Rprintf(__VA_ARGS__); } } while (false)
+#endif
 
 #define CUERRSTR() cudaGetErrorString(cudaGetLastError())
 
@@ -240,16 +251,16 @@ inline uint32_t max_distribute_length(
 
 inline void print_plan(
     const char *name, const std::vector<std::tuple<uint32_t, uint32_t>>& plan) {
-  printf("%s: [", name);
+  Rprintf("%s: [", name);
   bool first = true;
   for (auto& p : plan) {
     if (!first) {
-      printf(", ");
+      Rprintf(", ");
     }
     first = false;
-    printf("(%" PRIu32 ", %" PRIu32 ")", std::get<0>(p), std::get<1>(p));
+    Rprintf("(%" PRIu32 ", %" PRIu32 ")", std::get<0>(p), std::get<1>(p));
   }
-  printf("]\n");
+  Rprintf("]\n");
 }
 
 extern "C" {

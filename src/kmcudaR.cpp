@@ -8,6 +8,9 @@
 // #include <R_ext/Rdynload.h>
 #include "kmcuda.h"
 
+// need this to avoid assert conflicts with R
+#define NDEBUG
+
 #include <RcppEigen.h>
 
 namespace {
@@ -70,76 +73,76 @@ std::unordered_map<std::string, SEXP> parse_args(
 		return parse_int(iter->second);
 	}
 	
-	void parse_samples(
-			const std::unordered_map<std::string, SEXP> &kwargs,
-			std::unique_ptr<float[]> *samples, uint32_t *samples_size,
-			uint16_t *features_size) {
-		std::unique_ptr<SEXP[]> samples_chunks;
-		int chunks_size = 0;
-		{
-			auto samples_iter = kwargs.find("samples");
-			if (samples_iter == kwargs.end()) {
-				Rcpp::stop("\"samples\" must be defined");
-			}
-			SEXP samples_obj = samples_iter->second;
-			if (Rf_isReal(samples_obj)) {
-				chunks_size = 1;
-				samples_chunks.reset(new SEXP[1]);
-				samples_chunks[0] = samples_obj;
-			} else if (TYPEOF(samples_obj) == VECSXP) {
-				chunks_size = Rf_length(samples_obj);
-				samples_chunks.reset(new SEXP[chunks_size]);
-				for (int i = 0; i < chunks_size; i++) {
-					samples_chunks[i] = VECTOR_ELT(samples_obj, i);
-				}
-			} else {
-				Rcpp::stop("\"samples\" must be a 2D real matrix or a vector of 2D real matrices");
-			}
-		}
-		*samples_size = 0;
-		for (int i = 0; i < chunks_size; i++) {
-			if (!Rf_isReal(samples_chunks[i])) {
-				Rcpp::stop("\"samples\" must be a 2D real matrix or a vector of 2D real matrices");
-			}
-			SEXP dims = Rf_getAttrib(samples_chunks[i], R_DimSymbol);
-			if (Rf_length(dims) != 2) {
-				Rcpp::stop("\"samples\" must be a 2D real matrix or a vector of 2D real matrices");
-			}
-			int samples_size_i = INTEGER(dims)[0];
-			if (static_cast<int64_t>(*samples_size) + samples_size_i > INT32_MAX) {
-				Rcpp::stop("too many samples (>INT32_MAX)");
-			}
-			*samples_size += samples_size_i;
-			int features_size_i = INTEGER(dims)[1];
-			if (features_size_i > UINT16_MAX) {
-				Rcpp::stop("too many features (>UINT16_MAX)");
-			}
-			if (i == 0) {
-				*features_size = features_size_i;
-			} else if (*features_size != features_size_i) {
-				Rcpp::stop("\"samples\" vector contains matrices with different number of columns");
-			}
-		}
-		samples->reset(new float[
-                   static_cast<uint64_t>(*samples_size) * *features_size]);
-		float *samples_float = samples->get();
-		{
-			int offset = 0;
-			for (int i = 0; i < chunks_size; i++) {
-				double *samples_double = REAL(samples_chunks[i]);
-				SEXP dims = Rf_getAttrib(samples_chunks[i], R_DimSymbol);
-				uint32_t fsize = *features_size;
-				uint32_t ssize = INTEGER(dims)[0];
-#pragma omp parallel for
-				for (uint64_t f = 0; f < fsize; f++) {
-					for (uint64_t s = 0; s < ssize; s++) {
-						samples_float[offset + s * fsize + f] = samples_double[f * ssize + s];
-					}
-				}
-				offset += ssize * fsize;
-			}
-		}
-	}
+// 	void parse_samples(
+// 			const std::unordered_map<std::string, SEXP> &kwargs,
+// 			std::unique_ptr<float[]> *samples, uint32_t *samples_size,
+// 			uint16_t *features_size) {
+// 		std::unique_ptr<SEXP[]> samples_chunks;
+// 		int chunks_size = 0;
+// 		{
+// 			auto samples_iter = kwargs.find("samples");
+// 			if (samples_iter == kwargs.end()) {
+// 				Rcpp::stop("\"samples\" must be defined");
+// 			}
+// 			SEXP samples_obj = samples_iter->second;
+// 			if (Rf_isReal(samples_obj)) {
+// 				chunks_size = 1;
+// 				samples_chunks.reset(new SEXP[1]);
+// 				samples_chunks[0] = samples_obj;
+// 			} else if (TYPEOF(samples_obj) == VECSXP) {
+// 				chunks_size = Rf_length(samples_obj);
+// 				samples_chunks.reset(new SEXP[chunks_size]);
+// 				for (int i = 0; i < chunks_size; i++) {
+// 					samples_chunks[i] = VECTOR_ELT(samples_obj, i);
+// 				}
+// 			} else {
+// 				Rcpp::stop("\"samples\" must be a 2D real matrix or a vector of 2D real matrices");
+// 			}
+// 		}
+// 		*samples_size = 0;
+// 		for (int i = 0; i < chunks_size; i++) {
+// 			if (!Rf_isReal(samples_chunks[i])) {
+// 				Rcpp::stop("\"samples\" must be a 2D real matrix or a vector of 2D real matrices");
+// 			}
+// 			SEXP dims = Rf_getAttrib(samples_chunks[i], R_DimSymbol);
+// 			if (Rf_length(dims) != 2) {
+// 				Rcpp::stop("\"samples\" must be a 2D real matrix or a vector of 2D real matrices");
+// 			}
+// 			int samples_size_i = INTEGER(dims)[0];
+// 			if (static_cast<int64_t>(*samples_size) + samples_size_i > INT32_MAX) {
+// 				Rcpp::stop("too many samples (>INT32_MAX)");
+// 			}
+// 			*samples_size += samples_size_i;
+// 			int features_size_i = INTEGER(dims)[1];
+// 			if (features_size_i > UINT16_MAX) {
+// 				Rcpp::stop("too many features (>UINT16_MAX)");
+// 			}
+// 			if (i == 0) {
+// 				*features_size = features_size_i;
+// 			} else if (*features_size != features_size_i) {
+// 				Rcpp::stop("\"samples\" vector contains matrices with different number of columns");
+// 			}
+// 		}
+// 		samples->reset(new float[
+//                    static_cast<uint64_t>(*samples_size) * *features_size]);
+// 		float *samples_float = samples->get();
+// 		{
+// 			int offset = 0;
+// 			for (int i = 0; i < chunks_size; i++) {
+// 				double *samples_double = REAL(samples_chunks[i]);
+// 				SEXP dims = Rf_getAttrib(samples_chunks[i], R_DimSymbol);
+// 				uint32_t fsize = *features_size;
+// 				uint32_t ssize = INTEGER(dims)[0];
+// #pragma omp parallel for
+// 				for (uint64_t f = 0; f < fsize; f++) {
+// 					for (uint64_t s = 0; s < ssize; s++) {
+// 						samples_float[offset + s * fsize + f] = samples_double[f * ssize + s];
+// 					}
+// 				}
+// 				offset += ssize * fsize;
+// 			}
+// 		}
+// 	}
 	
 	KMCUDADistanceMetric parse_metric(
 			const std::unordered_map<std::string, SEXP> &kwargs) {
@@ -161,24 +164,24 @@ std::unordered_map<std::string, SEXP> parse_args(
 		return metric;
 	}
 	
-	int parse_device(
-			const std::unordered_map<std::string, SEXP> &kwargs) {
-		int device = parse_int(kwargs, "device", 0);
-		if (device < 0) {
-			Rcpp::stop("\"device\" may not be negative");
-		}
-		return device;
-	}
+	// int parse_device(
+	// 		const std::unordered_map<std::string, SEXP> &kwargs) {
+	// 	int device = parse_int(kwargs, "device", 0);
+	// 	if (device < 0) {
+	// 		Rcpp::stop("\"device\" may not be negative");
+	// 	}
+	// 	return device;
+	// }
 	
-	static const std::unordered_set<std::string> kmeans_kwargs {
-		"samples", "clusters", "tolerance", "init", "yinyang_t", "metric",
-		"average_distance", "seed", "device", "verbosity"
-	};
+	// static const std::unordered_set<std::string> kmeans_kwargs {
+	// 	"samples", "clusters", "tolerance", "init", "yinyang_t", "metric",
+	// 	"average_distance", "seed", "device", "verbosity"
+	// };
 	
-	static const std::unordered_set<std::string> knn_kwargs {
-		"k", "samples", "centroids", "assignments", "metric", "device",
-		"verbosity"
-	};
+	// static const std::unordered_set<std::string> knn_kwargs {
+	// 	"k", "samples", "centroids", "assignments", "metric", "device",
+	// 	"verbosity"
+	// };
 }
 
 // extern "C" {
