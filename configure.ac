@@ -38,7 +38,7 @@ R_LIBS=`"${R_HOME}/bin/R" CMD config --ldflags`
 R_CPIC=`"${R_HOME}/bin/R" CMD config CPICFLAGS`
 
 ## look for Rscript, but use the one found via R_HOME to allow for multiple installations
-AC_DEFUN(AC_PROG_RSCRIPT, [AC_CHECK_PROG(RSCRIPT,Rscript,yes)])
+AC_DEFUN([AC_PROG_RSCRIPT], [AC_CHECK_PROG(RSCRIPT,Rscript,yes)])
 AC_PROG_RSCRIPT
 
 if test x"${RSCRIPT}" == x"yes" ; then
