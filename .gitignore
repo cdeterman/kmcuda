@@ -8,6 +8,7 @@ cmake-build-*
 **/cmake_install.cmake
 **/dist
 **/libKMCUDA.egg-info
+**/autom4te.cache
 # Compiled Object files
 *.slo
 *.lo
