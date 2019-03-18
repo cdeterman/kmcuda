@@ -4,7 +4,8 @@
 ============================================
 
 K-means implementation is based on ["Yinyang K-Means: A Drop-In Replacement
-of the Classic K-Means with Consistent Speedup"](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/ding15.pdf). While it introduces some overhead and many conditional clauses
+of the Classic K-Means with Consistent Speedup"](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/ding15.pdf).
+While it introduces some overhead and many conditional clauses
 which are bad for CUDA, it still shows 1.6-2x speedup against the Lloyd
 algorithm. K-nearest neighbors employ the same triangle inequality idea and
 require precalculated centroids and cluster assignments, similar to the flattened
@@ -29,7 +30,7 @@ Table of contents
 * [K-nn](#k-nn)
 * [Notes](#notes)
 * [Building](#building)
-      * [macOS](#macos)
+   * [macOS](#macos)
 * [Testing](#testing)
 * [Benchmarks](#benchmarks)
    * [100,000x256@1024](#100000x2561024)
@@ -41,13 +42,13 @@ Table of contents
       * [Data](#data-1)
       * [Notes](#notes-2)
 * [Python examples](#python-examples)
-      * [K-means, L2 (Euclidean) distance](#k-means-l2-euclidean-distance)
-      * [K-means, angular (cosine) distance + average](#k-means-angular-cosine-distance--average)
-      * [K-nn](#k-nn-1)
+   * [K-means, L2 (Euclidean) distance](#k-means-l2-euclidean-distance)
+   * [K-means, angular (cosine) distance + average](#k-means-angular-cosine-distance--average)
+   * [K-nn](#k-nn-1)
 * [Python API](#python-api)
 * [R examples](#r-examples)
-      * [K-means](#k-means-1)
-      * [K-nn](#k-nn-2)
+   * [K-means](#k-means-1)
+   * [K-nn](#k-nn-2)
 * [R API](#r-api)
 * [C examples](#c-examples)
 * [C API](#c-api)
@@ -112,9 +113,9 @@ If you get OOM with the default parameters, set `yinyang_t` to 0 which
 forces Lloyd. `verbosity` 2 will print the memory allocation statistics
 (all GPU allocation happens at startup).
 
-Data type is either 32- or 16-bit float. Number of samples is limited by 1^32,
-clusters by 1^32 and features by 1^16 (1^17 for fp16). Besides, the product of
-clusters number and features number may not exceed 1^32.
+Data type is either 32- or 16-bit float. Number of samples is limited by 2^32,
+clusters by 2^32 and features by 2^16 (2^17 for fp16). Besides, the product of
+clusters number and features number may not exceed 2^32.
 
 In the case of 16-bit floats, the reduced precision often leads to a slightly
 increased number of iterations, Yinyang is especially sensitive to that.
@@ -123,6 +124,8 @@ In some cases, there may be overflows and the clustering may fail completely.
 Building
 --------
 ```
+git clone https://github.com/src-d/kmcuda
+cd src
 cmake -DCMAKE_BUILD_TYPE=Release . && make
 ```
 It requires cudart 8.0 / Pascal and OpenMP 4.0 capable compiler. The build has
@@ -135,17 +138,24 @@ If CUDA is not automatically found, add `-D CUDA_TOOLKIT_ROOT_DIR=/usr/local/cud
 the architecture 60 (Pascal). It is possible to override it via `-D CUDA_ARCH=52`,
 but fp16 support will be disabled then.
 
-Python users: if you are using Linux x86-64 and CUDA 8.0, then you can
-install libKMCUDA easily:
+Python users:
 ```
-pip install libKMCUDA
-```
-Otherwise, you'll have to install it from source:
-```
-pip install git+https://github.com/src-d/kmcuda.git
+CUDA_ARCH=61 pip install libKMCUDA
+# replace 61 with your device version
 ```
 
+Or install it from source:
+```
+CUDA_ARCH=61 pip install git+https://github.com/src-d/kmcuda.git#subdirectory=src
+# replace 61 with your device version
+```
+
+Binary Python packages are quite hard to provide because they depend on CUDA and device architecture versions. PRs welcome!
+
 #### macOS
+macOS build is tricky, but possible. The instructions below correspond to the state from 1 year ago and may be different now.
+Please help with updates!
+
 Install [Homebrew](http://brew.sh/) and the [Command Line Developer Tools](https://developer.apple.com/download/more/)
 which are compatible with your CUDA installation. E.g., CUDA 8.0 does not support
 the latest 8.x and works with 7.3.1 and below. Install `clang` with OpenMP support
@@ -157,7 +167,7 @@ pip3 install numpy
 ```
 Execute this magic command which builds kmcuda afterwards:
 ```
-CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ LDFLAGS=-L/usr/local/opt/llvm/lib/ cmake -DCMAKE_BUILD_TYPE=Release ..
+CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ LDFLAGS=-L/usr/local/opt/llvm/lib/ cmake -DCMAKE_BUILD_TYPE=Release .
 ```
 And make the last important step - rename \*.dylib to \*.so so that Python is able to import the native extension:
 ```
@@ -213,6 +223,16 @@ kmeans++ initialization, 93 iterations (1% reassignments equivalent).
 #### Notes
 KmeansRex did eat 205 GB of RAM on peak; it uses dynamic memory so it constantly
 bounced from 100 GB to 200 GB.
+
+Contributions
+-------------
+
+...are welcome! See [CONTRIBUTING](CONTRIBUTING.md) and [code of conduct](CODE_OF_CONDUCT.md).
+
+License
+-------
+
+[Apache 2.0](LICENSE.md)
 
 Python examples
 ---------------
@@ -657,6 +677,4 @@ KMCUDAResult knn_cuda(
 
 Returns KMCUDAResult (see `kmcuda.h`);
 
-License
--------
-MIT license.
+#### README {#ignore_this_doxygen_anchor}

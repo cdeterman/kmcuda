@@ -1,12 +1,12 @@
 Package: kmcudaR
 Type: Package
-Title: What the Package Does in One 'Title Case' Line
-Version: 0.1.1
-Date: 2017-02-24
+Title: 'Yingyang' K-Means and K-NN using NVIDIA CUDA
+Version: 1.1.0
+Date: 2019-03-18
 Author: Vadim Markovtsev, Charles Determan
 Maintainer: Charles Determan <cdetermanjr@gmail.com>
-Description: One paragraph description of what the package does as one or more full sentences.
-License: MIT + file LICENSE
+Description: K-means implementation is base on "Yingyang K-Means: A Drop-In Replacement of the Classic K-Means with Consistent Speedup". While it introduces some overhead and many ocnditional clauses which are bad for CUDA, it still shows 1.6-2x speedup agains thte Lloyd algorithm.  K-nearest neighbors employ the same triangle inequality idea and require precalculated centroids and cluster assignments, similar to the flattend ball tree. 
+License: Apache License (>= 2.0) + file LICENSE.md
 Depends: R (>= 3.3.2)
 Imports: Rcpp (>= 0.12.9)
 LinkingTo: Rcpp, RcppEigen

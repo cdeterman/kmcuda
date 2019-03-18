@@ -24,6 +24,7 @@
 
 inline int randWrapper(const int n) { return floor(unif_rand()*n); }
 
+/// Used in kmeans_cuda() to validate function arguments.
 static KMCUDAResult check_kmeans_args(
     float tolerance,
     float yinyang_t,
@@ -563,10 +564,10 @@ KMCUDAResult kmeans_cuda(
   }
   if (origin_devi < 0) {
     if (device_ptrs < 0) {
-      CUCH(cudaMemcpy(centroids, device_centroids[devs.back()].get(),
+      CUCH(cudaMemcpy(centroids, device_centroids[devs.size() - 1].get(),
                       centroids_size * sizeof(float), cudaMemcpyDeviceToHost),
            kmcudaMemoryCopyError);
-      CUCH(cudaMemcpy(assignments, device_assignments[devs.back()].get(),
+      CUCH(cudaMemcpy(assignments, device_assignments[devs.size() - 1].get(),
                       samples_size * sizeof(uint32_t), cudaMemcpyDeviceToHost),
            kmcudaMemoryCopyError);
     } else {
@@ -715,7 +716,7 @@ KMCUDAResult knn_cuda(
       cudaSetDevice(device_ptrs);
       CUCH(cudaMemcpy(
           asses_on_host.get(), assignments, samples_size * sizeof(uint32_t),
-          cudaMemcpyDeviceToHost), kmcudaRuntimeError);
+          cudaMemcpyDeviceToHost), kmcudaMemoryCopyError);
       #pragma omp parallel for
       for (uint32_t s = 0; s < samples_size; s++) {
         asses_with_idxs[s] = std::make_tuple(asses_on_host[s], s);
