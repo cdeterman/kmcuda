@@ -1,7 +1,7 @@
 Package: kmcudaR
 Type: Package
 Title: What the Package Does in One 'Title Case' Line
-Version: 0.1.0
+Version: 0.1.1
 Date: 2017-02-24
 Author: Vadim Markovtsev, Charles Determan
 Maintainer: Charles Determan <cdetermanjr@gmail.com>
