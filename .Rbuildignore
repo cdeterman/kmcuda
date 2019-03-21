@@ -3,3 +3,11 @@
 .travis*
 img
 img\*
+doc
+doc\*
+.github
+DCO
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+MAINTAINERS.md
+README.md
