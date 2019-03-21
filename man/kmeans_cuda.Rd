@@ -5,8 +5,8 @@
 \title{K-Means Clustering using CUDA}
 \usage{
 kmeans_cuda(samples, clusters, tolerance = 0.01, init = "k-means++",
-  yinyang_t = 0.1, metric = "L2", average_distance = FALSE, seed = NULL,
-  device = 0L, verbosity = 0L)
+  yinyang_t = 0.1, metric = "L2", average_distance = FALSE,
+  seed = NULL, device = 0L, verbosity = 0L)
 }
 \arguments{
 \item{samples}{A numeric matrix}
@@ -53,4 +53,3 @@ a list consisting of
 Performs k-means clustering on a
 numeric matrix using a NVIDIA GPU via CUDA
 }
-

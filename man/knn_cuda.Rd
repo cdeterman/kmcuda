@@ -37,4 +37,3 @@ Integer matrix with neighbor indices of shape [nsamp, k].
 k-nearest neighbor classification using
 a NVIDIA GPU via CUDA backend
 }
-

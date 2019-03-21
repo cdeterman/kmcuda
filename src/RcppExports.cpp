@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // r_kmeans_cuda
 SEXP r_kmeans_cuda(Rcpp::NumericMatrix samples, int clusters, SEXP tolerance_sexp, SEXP init_sexp, SEXP yinyang_t_sexp, SEXP metric_sexp, bool average_distance_bool, SEXP seed_sexp, int device, int verbosity);
-RcppExport SEXP kmcudaR_r_kmeans_cuda(SEXP samplesSEXP, SEXP clustersSEXP, SEXP tolerance_sexpSEXP, SEXP init_sexpSEXP, SEXP yinyang_t_sexpSEXP, SEXP metric_sexpSEXP, SEXP average_distance_boolSEXP, SEXP seed_sexpSEXP, SEXP deviceSEXP, SEXP verbositySEXP) {
+RcppExport SEXP _kmcudaR_r_kmeans_cuda(SEXP samplesSEXP, SEXP clustersSEXP, SEXP tolerance_sexpSEXP, SEXP init_sexpSEXP, SEXP yinyang_t_sexpSEXP, SEXP metric_sexpSEXP, SEXP average_distance_boolSEXP, SEXP seed_sexpSEXP, SEXP deviceSEXP, SEXP verbositySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -28,7 +28,7 @@ END_RCPP
 }
 // r_knn_cuda
 Rcpp::IntegerMatrix r_knn_cuda(int k, Rcpp::NumericMatrix samples, Rcpp::NumericMatrix centroids_sexp, Rcpp::IntegerVector assignments_sexp, SEXP metric_sexp, int device, int verbosity);
-RcppExport SEXP kmcudaR_r_knn_cuda(SEXP kSEXP, SEXP samplesSEXP, SEXP centroids_sexpSEXP, SEXP assignments_sexpSEXP, SEXP metric_sexpSEXP, SEXP deviceSEXP, SEXP verbositySEXP) {
+RcppExport SEXP _kmcudaR_r_knn_cuda(SEXP kSEXP, SEXP samplesSEXP, SEXP centroids_sexpSEXP, SEXP assignments_sexpSEXP, SEXP metric_sexpSEXP, SEXP deviceSEXP, SEXP verbositySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -42,4 +42,20 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(r_knn_cuda(k, samples, centroids_sexp, assignments_sexp, metric_sexp, device, verbosity));
     return rcpp_result_gen;
 END_RCPP
+}
+
+RcppExport SEXP kmcudaR_r_kmeans_cuda(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP kmcudaR_r_knn_cuda(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_kmcudaR_r_kmeans_cuda", (DL_FUNC) &_kmcudaR_r_kmeans_cuda, 10},
+    {"_kmcudaR_r_knn_cuda", (DL_FUNC) &_kmcudaR_r_knn_cuda, 7},
+    {"kmcudaR_r_kmeans_cuda", (DL_FUNC) &kmcudaR_r_kmeans_cuda, 10},
+    {"kmcudaR_r_knn_cuda",    (DL_FUNC) &kmcudaR_r_knn_cuda,     7},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_kmcudaR(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }
